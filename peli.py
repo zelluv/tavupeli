@@ -3,6 +3,8 @@ import numpy as np
 import sounddevice as sd
 import scipy.io.wavfile as wav
 import speech_recognition as sr
+from blessed import Terminal
+import time
 
 # Load the CSV file
 df = pd.read_csv('data/frekvenssit.csv')
@@ -17,7 +19,7 @@ def valitse_tavu():
 
 def generoi_tavu():
     kirjaimet = 'aeiouäö'
-    tavu = ''.join(random.choice(kirjaimet) for _ in range(random.randint(2, 3)))
+    tavu = ''.join(np.random.choice(list(kirjaimet)) for _ in range(np.random.randint(2, 4)))
     return tavu
 
 
@@ -47,19 +49,31 @@ def tunnista_puhe(audio_tiedosto):
 
 def pelaa_pelia():
     pisteet = 0
+    wrong_answers = 0
+    term = Terminal()
+
     while True:
         tavu = valitse_tavu()
-        print(f"Lue tämä tavu: {tavu}")
-        audio_tiedosto = tallenna_aanitiedosto() # Tallenna ääni
-        tunnistettu_teksti = tunnista_puhe(audio_tiedosto) # Tunnista puhe
+        with term.fullscreen(), term.cbreak():
+            print(term.clear)
+            print(term.move_y(term.height // 2))
+            print(term.center(f"Lue tämä tavu: {tavu}"))
+            print(term.center(f"Pisteet: {pisteet}"))
+            print(term.center(f"Väärät vastaukset: {wrong_answers}"))
 
-        if tunnistettu_teksti == tavu:
-            pisteet += 1
-            print(f"Oikein! Sinulla on nyt {pisteet} pistettä.")
-        else:
-            print(f"Väärin. Yritä uudelleen.")
+            audio_tiedosto = tallenna_aanitiedosto() # Tallenna ääni
+            tunnistettu_teksti = tunnista_puhe(audio_tiedosto) # Tunnista puhe
 
-        print("\n" + "=" * 30 + "\n")
+            if tunnistettu_teksti == tavu:
+                pisteet += 1
+                print(term.move_y(term.height // 2 + 2))
+                print(term.center(term.green("Oikein!")))
+                time.sleep(1)
+            else:
+                wrong_answers += 1
+                print(term.move_y(term.height // 2 + 2))
+                print(term.center(term.red("Väärin!")))
+                time.sleep(1)
 
 
 if __name__ == "__main__":
